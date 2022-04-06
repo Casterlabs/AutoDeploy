@@ -47,6 +47,7 @@ public class AutoDeploy extends SoraPlugin {
     public void deploy(JsonObject body) {
         String workflowId = body.getObject("workflow").getString("id");
         String commitShortHash = body.getObject("pipeline").getObject("vcs").getString("revision").substring(0, 7);
+        String branch = body.getObject("pipeline").getObject("vcs").getString("branch");
 
         JsonObject workflowInfo = HttpUtil.sendHttpRequestJson(
             new Request.Builder()
@@ -67,7 +68,7 @@ public class AutoDeploy extends SoraPlugin {
 
         assert jobNumber != -1;
 
-        this.getLogger().info("(%d) Incoming build: %s", jobNumber, commitShortHash);
+        this.getLogger().info("(%d) Incoming build: %s (%s)", jobNumber, commitShortHash, branch);
 
         JsonArray artifacts = HttpUtil.sendHttpRequestJson(
             new Request.Builder()
@@ -84,7 +85,7 @@ public class AutoDeploy extends SoraPlugin {
             this.getLogger().info("(%d) Uploading build artifact: %s (%d bytes)", jobNumber, file, tempFile.length());
 
             this.upload(
-                String.format("dist/stable/%s", file),
+                String.format("dist/%s/%s", branch, file),
                 tempFile
             );
 
@@ -92,7 +93,7 @@ public class AutoDeploy extends SoraPlugin {
         }
 
         this.upload(
-            "dist/stable/commit",
+            String.format("dist/%s/commit", branch),
             commitShortHash
         );
 
